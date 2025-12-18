@@ -1,0 +1,178 @@
+
+# Импорт библиотек
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Загрузка данных
+df = pd.read_csv('ds_salaries.csv')  # замените на ваш файл
+
+# 1) Предобработка и разведывательный анализ
+print("1) Предобработка и разведывательный анализ")
+print(f"Размер датасета: {df.shape}")
+print("\nИнформация о данных:")
+print(df.info())
+print("\nПропущенные значения:")
+print(df.isnull().sum())
+print("\nДубликаты:", df.duplicated().sum())
+
+print("\nХарактеристики числовых признаков:")
+print(df.describe())
+
+print("\nХарактеристики категориальных признаков:")
+cat_cols = df.select_dtypes(include=['object']).columns
+for col in cat_cols:
+    print(f"\n{col}: {df[col].nunique()} уникальных значений")
+    print(df[col].value_counts().head())
+python
+# 2) Количество вакансий по опыту работы
+print("2) Количество вакансий по опыту работы")
+exp_counts = df['experience_level'].value_counts()
+print(exp_counts)
+
+plt.figure(figsize=(8,5))
+exp_counts.plot(kind='bar')
+plt.title('Количество вакансий по опыту работы')
+plt.xlabel('Уровень опыта')
+plt.ylabel('Количество')
+plt.tight_layout()
+plt.show()
+python
+# 3) Топ 15 наиболее популярных должностей
+print("3) Топ 15 наиболее популярных должностей")
+top_jobs = df['job_title'].value_counts().head(15)
+print(top_jobs)
+
+plt.figure(figsize=(10,6))
+top_jobs.plot(kind='barh')
+plt.title('Топ 15 наиболее популярных должностей')
+plt.xlabel('Количество')
+plt.tight_layout()
+plt.show()
+python
+# 4) Распределение по году работы
+print("4) Распределение по году работы")
+year_counts = df['work_year'].value_counts().sort_index()
+print(year_counts)
+
+plt.figure(figsize=(8,5))
+year_counts.plot(kind='bar')
+plt.title('Распределение по году работы')
+plt.xlabel('Год')
+plt.ylabel('Количество вакансий')
+plt.tight_layout()
+plt.show()
+python
+# 5) Степень удаленной работы по годам
+print("5) Степень удаленной работы по годам")
+remote_by_year = df.groupby('work_year')['remote_ratio'].mean()
+print(remote_by_year)
+
+plt.figure(figsize=(8,5))
+remote_by_year.plot(marker='o')
+plt.title('Средняя степень удаленной работы по годам')
+plt.xlabel('Год')
+plt.ylabel('Средний remote_ratio')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+python
+# 6) Степень опытности от типа занятости
+print("6) Степень опытности от типа занятости")
+exp_by_employment = pd.crosstab(df['employment_type'], df['experience_level'])
+print(exp_by_employment)
+
+exp_by_employment.plot(kind='bar', figsize=(10,6))
+plt.title('Распределение уровня опыта по типам занятости')
+plt.xlabel('Тип занятости')
+plt.ylabel('Количество')
+plt.legend(title='Уровень опыта')
+plt.tight_layout()
+plt.show()
+python
+# 7) Топ 5 профессий, основанных на опыте
+print("7) Топ 5 профессий, основанных на опыте")
+experience_levels = df['experience_level'].unique()
+
+for level in experience_levels:
+    print(f"\nТоп 5 профессий для уровня {level}:")
+    top_jobs_exp = df[df['experience_level'] == level]['job_title'].value_counts().head(5)
+    print(top_jobs_exp)
+python
+# 8) Зарплаты в зависимости от года
+print("8) Зарплаты в зависимости от года")
+salary_by_year = df.groupby('work_year')['salary_in_usd'].agg(['mean', 'median'])
+print(salary_by_year)
+
+plt.figure(figsize=(8,5))
+plt.plot(salary_by_year.index, salary_by_year['mean'], marker='o', label='Средняя')
+plt.plot(salary_by_year.index, salary_by_year['median'], marker='s', label='Медианная')
+plt.title('Зарплаты в USD по годам')
+plt.xlabel('Год')
+plt.ylabel('Зарплата (USD)')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+python
+# 9) Зарплаты в зависимости от опыта
+print("9) Зарплаты в зависимости от опыта")
+salary_by_exp = df.groupby('experience_level')['salary_in_usd'].agg(['mean', 'median'])
+print(salary_by_exp)
+
+salary_by_exp[['mean', 'median']].plot(kind='bar', figsize=(8,5))
+plt.title('Зарплаты в зависимости от уровня опыта')
+plt.xlabel('Уровень опыта')
+plt.ylabel('Зарплата (USD)')
+plt.legend(['Средняя', 'Медианная'])
+plt.tight_layout()
+plt.show()
+python
+# 10) Топ 10 должностей по зарплате
+print("10) Топ 10 должностей по зарплате")
+top_salary_jobs = df.groupby('job_title')['salary_in_usd'].mean().sort_values(ascending=False).head(10)
+print(top_salary_jobs)
+
+plt.figure(figsize=(10,6))
+top_salary_jobs.plot(kind='barh')
+plt.title('Топ 10 должностей по средней зарплате')
+plt.xlabel('Средняя зарплата (USD)')
+plt.tight_layout()
+plt.show()
+python
+# 11) Выявить от чего зависят зарплаты
+print("11) Корреляционный анализ факторов влияния на зарплату")
+
+# Создаем копию датафрейма для анализа
+df_analysis = df.copy()
+
+# Преобразуем категориальные переменные
+categorical_cols = ['experience_level', 'employment_type', 'company_size']
+for col in categorical_cols:
+    df_analysis[col] = pd.factorize(df_analysis[col])[0]
+
+# Вычисляем корреляции
+correlation_matrix = df_analysis[['salary_in_usd', 'work_year', 'experience_level', 
+                                  'remote_ratio', 'employment_type', 'company_size']].corr()
+
+print("Корреляционная матрица:")
+print(correlation_matrix['salary_in_usd'].sort_values(ascending=False))
+
+# Визуализация корреляций
+plt.figure(figsize=(8,6))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0)
+plt.title('Корреляционная матрица факторов зарплаты')
+plt.tight_layout()
+plt.show()
+
+# Анализ по группам
+print("\nСредняя зарплата по основным категориям:")
+print("\nПо уровню опыта:")
+print(df.groupby('experience_level')['salary_in_usd'].mean().sort_values(ascending=False))
+
+print("\nПо типу занятости:")
+print(df.groupby('employment_type')['salary_in_usd'].mean().sort_values(ascending=False))
+
+print("\nПо размеру компании:")
+print(df.groupby('company_size')['salary_in_usd'].mean().sort_values(ascending=False))
